@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widok postu</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        li a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        li a:hover {
+            text-decoration: underline;
+        }
+
+        .post-actions a {
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+
+        .post-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .post-details p {
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .comments-section {
+            margin-top: 30px;
+        }
+
+        .comments-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .comments-section li {
+            background: #f9f9f9;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .comments-section li p {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .comment-actions a {
+            margin-right: 10px;
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .comment-actions a:hover {
+            text-decoration: underline;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        form label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        form textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        form button {
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        form button:hover {
+            background: #218838;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 30px;
+            color: #007BFF;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="post-container">
+        <h1>{{ post.title }}</h1>
+        <div class="post-details">
+            <p><strong>Opis:</strong> {{ post.description }}</p>
+            <p><strong>User:</strong> {{ post.user }}</p>
+            {% if request.user == post.user or request.user.username == 'Mateusz' %}
+            <div class="post-actions">
+                <a href="{% url 'edit-post' post.id %}">Edytuj post</a>
+            </div>
+            {% endif %}
+        </div>
+        <div class="comments-section">
+            <h2>Komentarze</h2>
+            <ul>
+                {% for comment in comments %}
+                <li>
+                    {% if edit_comment_id and comment.id|stringformat:"s" == edit_comment_id %}
+                    <form method="POST" action="{% url 'edit-comment' comment.id post.id %}">
+                        {% csrf_token %}
+                        <label for="description">Nowy komentarz:</label>
+                        <textarea name="description" id="description">{{ comment.description }}</textarea>
+                        <button type="submit">Zapisz zmiany</button>
+                    </form>
+                    {% else %}
+                    <p>{{ comment.description }}</p>
+                    <p><strong>Użytkownik:</strong> {{ comment.user }}</p>
+                    <form action="{% url 'toggle-like' comment.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit">
+                            {% if comment.id in user_likes %}
+                            👍 Polubiono
+                            {% else %}
+                            👍 Polub
+                            {% endif %}
+                            ({{ comment.like_count }})
+                        </button>
+                    </form>
+                    {% if comment.user == request.user or request.user.username == 'Mateusz' %}
+                    <div class="comment-actions">
+                        <a href="{% url 'edit-comment' comment.id post.id %}">Edytuj komentarz</a>
+                        <a href="{% url 'delete-comment' comment.id post.id %}">Usuń komentarz</a>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </li>
+                {% empty %}
+                <p>Nie ma jeszcze komentarzy</p>
+                {% endfor %}
+            </ul>
+        </div>
+        <form method="POST" action="{% url 'add-comment' post.id %}?next={{ request.path }}">
+            {% csrf_token %}
+            <label for="description">Napisz komentarz:</label>
+            <textarea name="description" id="description"></textarea>
+            <button type="submit">Skomentuj</button>
+        </form>
+        <a class="back-link" href="{% url 'post-list' %}">Wróć</a>
+    </div>
+</body>
+
+</html>
